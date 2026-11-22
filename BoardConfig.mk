@@ -71,7 +71,7 @@ TW_USE_DMCTL               := true
 
 # Init
 TARGET_INIT_VENDOR_LIB          := //$(DEVICE_PATH):libinit_oplus_sm87xx
-TARGET_RECOVERY_DEVICE_MODULES  := libinit_oplus_sm87xx
+TARGET_RECOVERY_DEVICE_MODULES  += libinit_oplus_sm87xx
 
 # Kernel
 BOARD_KERNEL_IMAGE_NAME     := Image
@@ -135,7 +135,7 @@ PLATFORM_VERSION                := 99.87.36
 PLATFORM_VERSION_LAST_STABLE    := $(PLATFORM_VERSION)
 PLATFORM_SECURITY_PATCH         := 2099-12-31
 VENDOR_SECURITY_PATCH           := $(PLATFORM_SECURITY_PATCH)
-TW_DEVICE_VERSION               := OPLUS-SM87XX
+TW_DEVICE_VERSION               := OnePlus_Turbo_6
 
 # Verified Boot
 BOARD_AVB_ENABLE := true
