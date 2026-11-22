@@ -1,0 +1,59 @@
+diff --git a/Decrypt.cpp b/Decrypt.cpp
+index a02bad8..596577d 100755
+--- a/Decrypt.cpp
++++ b/Decrypt.cpp
+@@ -588,14 +588,14 @@ namespace keystore {
+ 				keyResponse.metadata.key, begin_params.vector_data(), true,
+ 				&encOperationResponse);
+ 			if (!begin_rc.isOk()) {
+-				printf("Begin Operation failed\n");
++				printf("Keystore2 createOperation failed: %s\n", begin_rc.getDescription().c_str());
+ 				return disk_decryption_secret_key;
+ 			}
+ 			std::optional<std::vector<uint8_t>> optPlaintext;
+ 
+ 			begin_rc = encOperationResponse.iOperation->finish(cipher_text_hidlvec, {}, &optPlaintext);
+ 			if (!begin_rc.isOk()) {
+-				printf("finish reponse failed");
++				printf("Keystore2 finish failed: %s\n", begin_rc.getDescription().c_str());
+ 				return disk_decryption_secret_key;
+ 			}
+ 
+@@ -861,6 +861,10 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
+ 				AidlGatekeeperVerifyResp rsp;
+ 				auto result = aidl_gk_device->verify(fakeUid(user_id), 0 /* challenge */, pwd_handle_hidl, gk_pwd_token_hidl, &rsp);
+ 				free(gk_pwd_token);
++				if (!result.isOk()) {
++					printf("AIDL Gatekeeper verify failed: %s\n", result.getDescription().c_str());
++					return Free_Return(retval, weaver_key, &pwd);
++				}
+ 
+ 				if (rsp.statusCode >= AidlIGatekeeper::STATUS_OK) {
+ 					// Serialize HardwareAuthToken to a vector as hw_auth_token_t.
+@@ -921,6 +925,10 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
+ 			}
+ 			if (gkResponse.response_code() == GKResponseCode::OK) {
+ 				if (gkResponse.payload().size() != 0) {
++					if (gkResponse.payload().size() != sizeof(hw_auth_token_t)) {
++						printf("Gatekeeper returned an invalid auth token size: %zu\n", gkResponse.payload().size());
++						return Free_Return(retval, weaver_key, &pwd);
++					}
+ 					const hw_auth_token_t* hwAuthToken =
+ 						reinterpret_cast<const hw_auth_token_t*>(gkResponse.payload().data());
+ 					HardwareAuthToken authToken;
+@@ -937,8 +945,15 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
+ 					if (service == NULL) {
+ 						printf("error: could not connect to keystore service\n");
+ 						ALOGE("error: could not connect to keystore service\n");
++						return Free_Return(retval, weaver_key, &pwd);
+ 					}
+ 					auto binder_result = service->addAuthToken(authToken);
++					if (!binder_result.isOk()) {
++						printf("Keystore2 addAuthToken failed: %s\n", binder_result.getDescription().c_str());
++						return Free_Return(retval, weaver_key, &pwd);
++					}
++				} else {
++					printf("Gatekeeper returned no auth token\n");
+ 				}
+ 			}
+ 

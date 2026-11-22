@@ -1,0 +1,59 @@
+diff --git a/KeyStorage.cpp b/KeyStorage.cpp
+index a186c04..5cd65cc 100644
+--- a/KeyStorage.cpp
++++ b/KeyStorage.cpp
+@@ -335,51 +335,13 @@ static KeystoreOperation BeginKeystoreOp(Keystore& keystore, const std::string&
+ 
+     auto blob_file = dir + "/" + kFn_keymaster_key_blob;
+     LOG(INFO) << "reading blob_file: " << blob_file;
+-    std::string blob_dir(kFn_keymaster_key_blob);
+-    std::string temp_dir = "/tmp/" + blob_dir + "/";
+-    if (TEMP_FAILURE_RETRY(mkdir(temp_dir.c_str(), 0700)) == -1) {
+-        PLOG(ERROR) << "key mkdir " << temp_dir;
+-    }
+-    auto upgraded_blob_file = temp_dir + kFn_keymaster_key_blob;
+-    // auto upgraded_blob_file = dir + "/" + kFn_keymaster_key_blob_upgraded;
+     std::lock_guard<std::mutex> lock(key_upgrade_lock);
+ 
+     std::string blob;
+-//     bool already_upgraded = IsKeyCommitPending(dir);
+-//     if (already_upgraded) {
+-//         LOG(INFO)
+-//                 << blob_file
+-//                 << " was already upgraded and is waiting to be committed; using the upgraded blob";
+-//         if (!readFileToString(upgraded_blob_file, &blob)) return KeystoreOperation();
+-//     } else {
+-//         DeleteUpgradedKey(keystore, upgraded_blob_file);
+-        if (!readFileToString(blob_file, &blob)) return KeystoreOperation();
+-//     }
+-
+-    auto opHandle = keystore.begin(blob, inParams, outParams);
+-    if (!opHandle) return opHandle;
++    if (!readFileToString(blob_file, &blob)) return KeystoreOperation();
+ 
+-    // If key blob wasn't upgraded, nothing left to do.
+-    // if (!opHandle.getUpgradedBlob()) return opHandle;
+-
+-//     if (already_upgraded) {
+-//         LOG(ERROR) << "Unexpected case; already-upgraded key " << upgraded_blob_file
+-//                    << " still requires upgrade";
+-//         return KeystoreOperation();
+-//     }
+-    LOG(INFO) << "Upgrading key: " << blob_file;
+-    
+-    if (!writeStringToFile(*opHandle.getUpgradedBlob(), upgraded_blob_file))
+-        return KeystoreOperation();
+-//     if (cp_needsCheckpoint()) {
+-//         LOG(INFO) << "Wrote upgraded key to " << upgraded_blob_file
+-//                   << "; delaying commit due to checkpoint";
+-//         ScheduleKeyCommit(dir);
+-//     } else {
+-//         if (!CommitUpgradedKey(keystore, dir)) return KeystoreOperation();
+-//         LOG(INFO) << "Key upgraded: " << blob_file;
+-//     }
+-    return opHandle;
++    // begin() already retries with an upgraded blob. Recovery must not persist it.
++    return keystore.begin(blob, inParams, outParams);
+ }
+ 
+ static bool encryptWithKeystoreKey(Keystore& keystore, const std::string& dir,
