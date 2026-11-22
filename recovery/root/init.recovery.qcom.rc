@@ -65,13 +65,8 @@ on property:twrp.modules.loaded=true
     umount /vendor
     symlink /firmware /vendor/firmware_mnt
     start vendor.oplus.vibrator
-    trigger twrp_secure_element
-
-on twrp_secure_element && property:twrp.se.no_sb=false
-    enable vendor.keymint-strongbox
-    enable vendor.weaver_nxp
     enable vendor.secure_element
 
 on property:vendor.sys.listeners.registered=true
-    setprop sys.boot_completed 1
+    # The copied keystore database must not trigger deletion of original KeyMint blobs.
     start vendor.ssgtzd
